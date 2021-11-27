@@ -1,3 +1,6 @@
+import numpy as np
+import time
+
 def rebin(x, bin_avg=2, error_prop=False):
     '''
     Rebin a numpyarray (if error_prop==True compute the error propagation of the rebbinning procedure)
@@ -18,7 +21,8 @@ def rebin(x, bin_avg=2, error_prop=False):
         else:
             new_x = np.sqrt((x[off_set:].reshape(npoint_new, bin_avg)**2).sum(1))/bin_avg
         return new_x
-  
+
+    
 def moving_avg(x, n=3, error_prop=False, symmetric=True):
     '''
     Mooving average of a numerical numpy array
@@ -78,7 +82,7 @@ def moving_avg(x, n=3, error_prop=False, symmetric=True):
     else:
         return copy.deepcopy(x)
 
-  
+
 def trapz_int(x, y, y_std, check_dx=False):
     '''
     Function used to calculate the integral of a function using the trapezoid rule and to compute the propagation of the errors 
@@ -121,6 +125,7 @@ def integrate(x, y, yerr, dataset_len=10000, num_int_algorithm='simps'):
         raise Exception('ERROR! Unknown algorithm for numerical integration: "{}"'.format(num_int_algorithm))
     return integrated.mean(), integrated.std()
 
+
 def weighted_mean(values, errors, excluded_points=[], return_error='none'):
     '''
     return_error: 
@@ -160,3 +165,111 @@ def weighted_mean(values, errors, excluded_points=[], return_error='none'):
             return mean, serr
         else:
             raise Exception('ERROR! Unkown command: \'{}\'.'.formaqt(return_error))
+
+            
+def progress_bar(percent, output_line_format = '{progress_bar}', progress_char='->', bar_len = 20, new_line_after_intger_values=True):
+    '''
+
+    '''
+    
+    int_percent = int(percent)
+    real_percent = percent - int_percent
+    if percent != 0 and real_percent == 0:
+        real_percent = 1
+        
+    if progress_char == '->':
+        progress_chars = '-' * (int(bar_len * real_percent)-1)
+        if real_percent < 1:
+            progress_chars += '>'
+        else:
+            progress_chars += '-'
+        bar = '[{:<{}}] {:.2f}%'.format(progress_chars, bar_len, percent * 100)
+    else:
+        bar = '[{:<{}}] {:.2f}%'.format(progress_char * int(bar_len * real_percent), bar_len, percent * 100)
+    return output_line_format.format(progress_bar=bar)
+
+
+def print_progress_bar(percent, output_line_format = '{progress_bar}', progress_char='->', bar_len = 20, new_line_after_intger_values=True):
+    out = progress_bar(percent, output_line_format = output_line_format, progress_char = progress_char, bar_len = bar_len, new_line_after_intger_values=new_line_after_intger_values)
+    
+    sys.stdout.write('\r')
+    sys.stdout.write(out)
+    if new_line_after_intger_values and real_percent == int(real_percent) and percent != 0:
+        sys.stdout.write('\n')
+    sys.stdout.flush()
+
+
+def pbar_with_timer(steps_done, n_steps, t_0, cmd_per_file=1, t_remaining = None):
+    '''
+    Example:
+    
+    ###########################################   code   ###########################################
+    
+    n_tests = 10
+    test_iterations = 5
+    test_duration   = 3.0
+
+    n_total_iterations = n_tests * test_iterations
+    dt_test = test_duration / test_iterations
+
+    def execute_prosess(prosess):
+
+        verbose = True
+
+        counter_iter = 0
+        t_0    = time.perf_counter()
+        t_step = 0.0
+        t_rem  = np.NaN
+
+        for i_t in range(n_tests):
+            for i_i in range(test_iterations):
+                pname = 'Test_{:02d}-Iteration_{:02d}'.format(i_t, i_i)
+                pbar, t_step, s_rem = ptl.pbar_with_timer(counter_iter, n_total_iterations, t_0)
+                processing = 'Processing: \"{}\"'.format(pname)
+                print('\r{:45} {}'.format(processing, pbar)+' '*40, end='')
+
+                prosess
+
+                counter_iter += 1
+                if verbose:
+                    print('\r{:3d}#  {}'.format(counter_iter, pname)+' '*160)
+            if verbose:
+                print('\r  ->  Executed: Test_{:02d}'.format(i_t)+' '*160+'\n')
+            else:
+                print('\r - Executed: Test_{:02d}'.format(i_t)+' '*160)
+
+        pbar, t_step, s_rem = ptl.pbar_with_timer(counter_iter, n_total_iterations, t_0)
+        print('PROCESS ENDED', pbar)
+        
+    ###########################################  output  ###########################################
+      1#  Test_00-Iteration_00                                                                                                                                                           
+      2#  Test_00-Iteration_01
+      3#  Test_00-Iteration_02
+      4#  Test_00-Iteration_03
+      5#  Test_00-Iteration_04
+      ->  Executed: Test_00                                                                                                                                                                
+
+      6#  Test_01-Iteration_00
+      7#  Test_01-Iteration_01
+      8#  Test_01-Iteration_02
+      9#  Test_01-Iteration_03
+     10#  Test_01-Iteration_04
+      ->  Executed: Test_01                                                                                                                                                                
+
+     11#  Test_02-Iteration_00
+     12#  Test_02-Iteration_01
+     13#  Test_02-Iteration_02
+    Processing: "Test_02-Iteration_03"            [------------>       ] 65.00%  -  Analyzed files:  13/ 20  -  Timer:     8 s (remaining     4 s)                                       
+    '''
+    t_step = time.perf_counter() - t_0
+    if t_remaining == None:
+        if steps_done:
+            t_remaining = (float(n_steps) / steps_done - 1) * t_step
+        else:
+            t_remaining = np.NaN
+    else:
+        t_remaining = t_remaining - t_step
+    timer = 'Timer: {:5.0f} s (remaining {:5.0f} s)'.format(t_step, t_remaining)
+    file_num = 'Analyzed files: {:3d}/{:3d}'.format(int(steps_done/cmd_per_file), int(n_steps/cmd_per_file))
+    pbar = progress_bar(steps_done/n_steps, output_line_format='{progress_bar}  -  '+file_num+'  -  '+timer)
+    return pbar, t_step, t_remaining
