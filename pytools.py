@@ -273,3 +273,22 @@ def pbar_with_timer(steps_done, n_steps, t_0, cmd_per_file=1, t_remaining = None
     file_num = 'Analyzed files: {:3d}/{:3d}'.format(int(steps_done/cmd_per_file), int(n_steps/cmd_per_file))
     pbar = progress_bar(steps_done/n_steps, output_line_format='{progress_bar}  -  '+file_num+'  -  '+timer)
     return pbar, t_step, t_remaining
+
+
+def read_xvg(fname):
+    '''
+    Read xvg files
+    '''
+    data = []
+    with open(fname, 'r') as fin:
+        txt_lines = fin.readlines()
+    for line in txt_lines:
+        if line.find('#') == -1 and line.find('@') == -1:
+        #if line[0] != '#' and line[0] != '@':
+            data.append(line)
+    
+    x = np.empty(len(data), dtype=np.float32)
+    y = np.empty(len(data), dtype=np.float32)
+    for i in range(0, len(data)):
+        x[i], y[i] = data[i].split()[0:2]
+    return x, y
