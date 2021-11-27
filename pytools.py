@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import os
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -346,3 +347,54 @@ def add_subplot_axes(ax, rect, facecolor='w'):
     #subax.xaxis.set_tick_params(labelsize=x_labelsize)
     #subax.yaxis.set_tick_params(labelsize=y_labelsize)
     return subax
+
+
+def get_filenames(path, ext='', start='', keywords=[], exclude=[], sort=True, return_fnames_without_ext=False):
+    fnames = []
+
+    for f in os.listdir(path):
+
+        if os.path.isfile(os.path.join(path, f)) and f[0] != ".":
+
+            correct_ext     = False
+            correct_start   = False
+            correct_kwords  = False
+            correct_exclude = True
+
+            fdot = len(f) - f[::-1].find(".") - 1
+            fext = f[fdot+1:]
+
+            if fext == ext or ext == '':
+                correct_ext = True
+
+            if start != '':
+                if start == f[:len(start)]:
+                    correct_start = True
+            else:
+                correct_start = True
+
+            kw_counter = 0
+            for kword in keywords:
+                if kword in f:
+                    kw_counter += 1
+            if kw_counter == len(keywords):
+                correct_kwords = True
+
+            for ex in exclude:
+                if ex in f:
+                    correct_exclude = False
+                    break
+
+            if correct_ext and correct_start and correct_kwords and correct_exclude:
+                if return_fnames_without_ext:
+                    if fext != '':
+                        fnames.append(f[:fdot])
+                    else:
+                        if f[:fdot] not in fnames:
+                            fnames.append(f[:fdot])
+                else:
+                    fnames.append(f)
+    if sort:
+        list.sort(fnames)
+
+    return fnames
