@@ -398,3 +398,15 @@ def get_filenames(path, ext='', start='', keywords=[], exclude=[], sort=True, re
         list.sort(fnames)
 
     return fnames
+
+def get_filetypes(fnames):
+    ftypes = dict()
+    for f in fnames:
+        fdot = len(f)-f[::-1].find('.')
+        fname = f[:fdot-1]
+        fext = f[fdot:]
+        if fname not in ftypes:
+            ftypes[fname] = [fext]
+        else:
+            ftypes[fname].append(fext)
+    return ftypes
