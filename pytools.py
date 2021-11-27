@@ -1,5 +1,7 @@
 import numpy as np
 import time
+import matplotlib
+import matplotlib.pyplot as plt
 
 def rebin(x, bin_avg=2, error_prop=False):
     '''
@@ -292,3 +294,55 @@ def read_xvg(fname):
     for i in range(0, len(data)):
         x[i], y[i] = data[i].split()[0:2]
     return x, y
+
+
+def scientific_notation_FLOAT(value, error, verbose=False):
+    n = '{:e}'.format(error)
+    if verbose:
+        print('err:', n)
+    idx = n.find('e')
+    sgn_err = 1 if n[idx+1] == '+' else -1
+    exp_err  = int(n[idx+2:])
+    num_err  = int(np.round(float(n[:idx])))
+
+    n = '{:e}'.format(value)
+    if verbose:
+        print('val:', n)
+    idx = n.find('e')
+    sgn_val = 1 if n[idx+1] == '+' else -1
+    exp_val  = int(n[idx+2:])
+    diff_exp = sgn_val * exp_val - sgn_err * exp_err
+    num_val  = np.round(float(n[:idx]) * (10**diff_exp))
+
+    if sgn_err < 0:
+        num_err = np.round(num_err * (10**-exp_err), exp_err)
+        num_val = np.round(num_val * (10**-exp_err), exp_err)
+
+    if verbose:
+        if exp_err != 0:
+            print('ALL: ({} +- {}) · 10^({})'.format(num_val, num_err, sgn_err*exp_err))
+        else:
+            print('ALL: ({} +- {})'.format(num_val, num_err))
+    return num_val, num_err, sgn_err*exp_err
+
+
+def add_subplot_axes(ax, rect, facecolor='w'):
+    fig = plt.gcf()
+    box = ax.get_position()
+    width = box.width
+    height = box.height
+    inax_position  = ax.transAxes.transform(rect[0:2])
+    transFigure = fig.transFigure.inverted()
+    infig_position = transFigure.transform(inax_position)    
+    x = infig_position[0]
+    y = infig_position[1]
+    width *= rect[2]
+    height *= rect[3]  # <= Typo was here
+    subax = fig.add_axes([x,y,width,height],facecolor=facecolor)
+    #x_labelsize = subax.get_xticklabels()[0].get_size()
+    #y_labelsize = subax.get_yticklabels()[0].get_size()
+    #x_labelsize *= rect[2]**0.5
+    #y_labelsize *= rect[3]**0.5
+    #subax.xaxis.set_tick_params(labelsize=x_labelsize)
+    #subax.yaxis.set_tick_params(labelsize=y_labelsize)
+    return subax
